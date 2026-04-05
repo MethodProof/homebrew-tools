@@ -1,4 +1,4 @@
-class Methodproof < Formula
+class Mp < Formula
   include Language::Python::Virtualenv
 
   desc "Capture and visualize your engineering process as a knowledge graph"

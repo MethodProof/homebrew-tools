@@ -1,32 +1,32 @@
-# homebrew-methodproof
+# homebrew-tools
 
-Homebrew tap for the [MethodProof CLI](https://github.com/MethodProof/methodproof-cli).
+Homebrew tap for [MethodProof](https://github.com/MethodProof/methodproof-cli) tools.
 
 ## Install
 
 ```bash
-brew install methodproof/methodproof/methodproof
+brew install methodproof/tools/mp
 ```
 
 Or add the tap first:
 
 ```bash
-brew tap methodproof/methodproof
-brew install methodproof
+brew tap methodproof/tools
+brew install mp
 ```
 
 ## Usage
 
 ```bash
-methodproof init      # choose what to capture, install hooks
-methodproof start     # begin recording
+mp init      # choose what to capture, install hooks
+mp start     # begin recording
 # ... code normally ...
-methodproof stop      # stop and build process graph
-methodproof view      # inspect captured data
+mp stop      # stop and build process graph
+mp view      # inspect captured data
 ```
 
 ## Update
 
 ```bash
-brew upgrade methodproof
+brew upgrade mp
 ```
