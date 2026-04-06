@@ -1,0 +1,56 @@
+name: Update Formula
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"  # every 15 minutes
+  workflow_dispatch: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check PyPI for latest version
+        id: pypi
+        run: |
+          LATEST=$(curl -sf https://pypi.org/pypi/methodproof/json | jq -r '.info.version')
+          CURRENT=$(grep -oP 'methodproof-\K[0-9]+\.[0-9]+\.[0-9]+' Formula/mp.rb | head -1)
+          echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          if [ "$LATEST" = "$CURRENT" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download and hash new release
+        if: steps.pypi.outputs.up_to_date == 'false'
+        id: sha
+        run: |
+          VERSION=${{ steps.pypi.outputs.latest }}
+          URL="https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-${VERSION}.tar.gz"
+          SHA=$(curl -sfL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Update formula
+        if: steps.pypi.outputs.up_to_date == 'false'
+        run: |
+          VERSION=${{ steps.pypi.outputs.latest }}
+          URL="${{ steps.sha.outputs.url }}"
+          SHA="${{ steps.sha.outputs.sha256 }}"
+          sed -i "s|url \".*\"|url \"${URL}\"|" Formula/mp.rb
+          sed -i "0,/sha256 \".*\"/{s|sha256 \".*\"|sha256 \"${SHA}\"|}" Formula/mp.rb
+
+      - name: Commit and push
+        if: steps.pypi.outputs.up_to_date == 'false'
+        run: |
+          VERSION=${{ steps.pypi.outputs.latest }}
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/mp.rb
+          git commit -m "update methodproof to ${VERSION}"
+          git push
