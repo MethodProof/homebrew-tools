@@ -2,7 +2,7 @@ name: Update Formula
 
 on:
   schedule:
-    - cron: "*/15 * * * *"  # every 15 minutes
+    - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 jobs:
@@ -26,24 +26,79 @@ jobs:
             echo "up_to_date=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Download and hash new release
+      - name: Download and verify new release
         if: steps.pypi.outputs.up_to_date == 'false'
-        id: sha
+        id: release
         run: |
           VERSION=${{ steps.pypi.outputs.latest }}
           URL="https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-${VERSION}.tar.gz"
-          SHA=$(curl -sfL "$URL" | sha256sum | cut -d' ' -f1)
+
+          # Retry download until available (PyPI propagation delay)
+          for i in $(seq 1 30); do
+            if curl -sfL -o /tmp/release.tar.gz "$URL" && [ -s /tmp/release.tar.gz ]; then
+              echo "Downloaded ${URL}"
+              break
+            fi
+            echo "Waiting for PyPI... ($i/30)"
+            sleep 10
+          done
+
+          if [ ! -s /tmp/release.tar.gz ]; then
+            echo "::error::Package not available on PyPI after 5 minutes"
+            exit 1
+          fi
+
+          SHA=$(sha256sum /tmp/release.tar.gz | cut -d' ' -f1)
+
+          # Sanity check — empty-string SHA means bad download
+          EMPTY_SHA="e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          if [ "$SHA" = "$EMPTY_SHA" ]; then
+            echo "::error::Downloaded file is empty"
+            exit 1
+          fi
+
           echo "sha256=$SHA" >> "$GITHUB_OUTPUT"
           echo "url=$URL" >> "$GITHUB_OUTPUT"
 
-      - name: Update formula
+      - name: Write formula
         if: steps.pypi.outputs.up_to_date == 'false'
         run: |
-          VERSION=${{ steps.pypi.outputs.latest }}
-          URL="${{ steps.sha.outputs.url }}"
-          SHA="${{ steps.sha.outputs.sha256 }}"
-          sed -i "s|url \".*\"|url \"${URL}\"|" Formula/mp.rb
-          sed -i "0,/sha256 \".*\"/{s|sha256 \".*\"|sha256 \"${SHA}\"|}" Formula/mp.rb
+          URL="${{ steps.release.outputs.url }}"
+          SHA="${{ steps.release.outputs.sha256 }}"
+          cat > Formula/mp.rb << 'RUBY'
+          class Mp < Formula
+            include Language::Python::Virtualenv
+
+            desc "Capture and visualize your engineering process as a knowledge graph"
+            homepage "https://github.com/MethodProof/methodproof-cli"
+            url "REPLACE_URL"
+            sha256 "REPLACE_SHA"
+            license "Apache-2.0"
+
+            depends_on "python@3.13"
+
+            resource "watchdog" do
+              url "https://files.pythonhosted.org/packages/source/w/watchdog/watchdog-6.0.0.tar.gz"
+              sha256 "9ddf7c82fda3ae8e24decda1338ede66e1c99883db93711d8fb941eaa2d8c282"
+            end
+
+            resource "websocket-client" do
+              url "https://files.pythonhosted.org/packages/source/w/websocket-client/websocket_client-1.8.0.tar.gz"
+              sha256 "3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da"
+            end
+
+            def install
+              virtualenv_install_with_resources
+            end
+
+            test do
+              assert_match "methodproof", shell_output("#{bin}/methodproof --help")
+            end
+          end
+          RUBY
+          sed -i 's/^          //' Formula/mp.rb
+          sed -i "s|REPLACE_URL|${URL}|" Formula/mp.rb
+          sed -i "s|REPLACE_SHA|${SHA}|" Formula/mp.rb
 
       - name: Commit and push
         if: steps.pypi.outputs.up_to_date == 'false'

@@ -3,19 +3,19 @@ class Mp < Formula
 
   desc "Capture and visualize your engineering process as a knowledge graph"
   homepage "https://github.com/MethodProof/methodproof-cli"
-  url "https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-0.4.2.tar.gz"
-  sha256 "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  url "https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-0.4.1.tar.gz"
+  sha256 "d933babf5eb2339525a1baf27ec4bbe55e78286c07b4ff839aa63b19c82b8928"
   license "Apache-2.0"
 
   depends_on "python@3.13"
 
   resource "watchdog" do
-    url "https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-0.4.2.tar.gz"
+    url "https://files.pythonhosted.org/packages/source/w/watchdog/watchdog-6.0.0.tar.gz"
     sha256 "9ddf7c82fda3ae8e24decda1338ede66e1c99883db93711d8fb941eaa2d8c282"
   end
 
   resource "websocket-client" do
-    url "https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-0.4.2.tar.gz"
+    url "https://files.pythonhosted.org/packages/source/w/websocket-client/websocket_client-1.8.0.tar.gz"
     sha256 "3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da"
   end
 
