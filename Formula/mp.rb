@@ -3,8 +3,8 @@ class Mp < Formula
 
   desc "Capture and visualize your engineering process as a knowledge graph"
   homepage "https://github.com/MethodProof/methodproof-cli"
-  url "https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-0.7.8.tar.gz"
-  sha256 "9a80c882bc8961fac4f9e837353be19181abb3be743a93c6436b56e31a6d3acb"
+  url "https://files.pythonhosted.org/packages/source/m/methodproof/methodproof-0.7.12.tar.gz"
+  sha256 "13d6b9bcbf1501cbee7c14a29695e903491abebcd4a0eb1003e9fdf8ef566a35"
   license "Apache-2.0"
 
   depends_on "python@3.13"
